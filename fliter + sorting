@@ -1,0 +1,51 @@
+import type { Project } from "../types/project";
+
+export type SortKey = "projectName" | "latitude" | "longitude" | "status" | "lastUpdated";
+export type SortDir = "asc" | "desc";
+
+export function applyFilterSort(input: Project[], opts: {
+  query: string;
+  status: string; // "All" or status
+  sortKey: SortKey;
+  sortDir: SortDir;
+}) {
+  const q = opts.query.trim().toLowerCase();
+  const status = opts.status;
+
+  let out = input;
+
+  if (q) {
+    out = out.filter((p) =>
+      p.projectName.toLowerCase().includes(q) ||
+      p.status.toLowerCase().includes(q)
+    );
+  }
+
+  if (status !== "All") {
+    out = out.filter((p) => p.status === status);
+  }
+
+  const dir = opts.sortDir === "asc" ? 1 : -1;
+
+  out = [...out].sort((a, b) => {
+    const key = opts.sortKey;
+
+    const av = a[key];
+    const bv = b[key];
+
+    // Dates as ISO string
+    if (key === "lastUpdated") {
+      return (new Date(av as string).getTime() - new Date(bv as string).getTime()) * dir;
+    }
+
+    // Strings
+    if (typeof av === "string" && typeof bv === "string") {
+      return av.localeCompare(bv) * dir;
+    }
+
+    // Numbers
+    return ((av as number) - (bv as number)) * dir;
+  });
+
+  return out;
+}

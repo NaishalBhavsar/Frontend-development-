@@ -1,0 +1,86 @@
+import { Box, Grid } from "@mui/material";
+import { useMemo, useState } from "react";
+import { useProjects } from "../../hooks/useProjects";
+import { applyFilterSort, SortDir, SortKey } from "../../utils/filterSort";
+import { ProjectToolbar } from "../Filters/ProjectToolbar";
+import { ProjectTable } from "../Table/ProjectTable";
+import { ProjectMap } from "../Map/ProjectMap";
+import type { Project } from "../../types/project";
+
+const statusOptions = ["All", "Planned", "In Progress", "Completed", "On Hold"];
+
+export function Dashboard() {
+  const { loading, total, loadedItems, loadedCount, loadAllPages } = useProjects(250);
+
+  // UI state (local only)
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<string>("All");
+  const [sortKey, setSortKey] = useState<SortKey>("lastUpdated");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // When marker selects row, we scroll the table
+  const [scrollToId, setScrollToId] = useState<string | null>(null);
+
+  const filteredSorted = useMemo(() => {
+    return applyFilterSort(loadedItems, { query, status, sortKey, sortDir });
+  }, [loadedItems, query, status, sortKey, sortDir]);
+
+  function onSortChange(k: SortKey) {
+    if (k === sortKey) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(k);
+      setSortDir("asc");
+    }
+  }
+
+  function selectProject(p: Project) {
+    setSelectedId(p.id);
+  }
+
+  function selectById(id: string) {
+    setSelectedId(id);
+    setScrollToId(id);
+  }
+
+  return (
+    <Box p={2} display="flex" flexDirection="column" gap={2}>
+      <ProjectToolbar
+        query={query}
+        onQueryChange={setQuery}
+        status={status}
+        onStatusChange={setStatus}
+        statusOptions={statusOptions}
+        loading={loading}
+        loadedCount={loadedCount}
+        total={total}
+        onLoadAll={loadAllPages}
+      />
+
+      <Grid container spacing={2}>
+        <Grid item xs={12} md={6}>
+          <ProjectTable
+            rows={filteredSorted}
+            selectedId={selectedId}
+            onSelect={selectProject}
+            sortKey={sortKey}
+            sortDir={sortDir}
+            onSortChange={onSortChange}
+            scrollToId={scrollToId}
+            onScrolledToId={() => setScrollToId(null)}
+          />
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <ProjectMap
+            rows={filteredSorted}
+            selectedId={selectedId}
+            onSelectById={selectById}
+          />
+        </Grid>
+      </Grid>
+    </Box>
+  );
+}

@@ -1,0 +1,40 @@
+import type { Project } from "../types/project";
+import projects from "../data/projects.json";
+
+export type PagedResponse<T> = {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  items: T[];
+};
+
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+export async function fetchProjectsPage(params: {
+  page: number;      // 1-based
+  pageSize: number;
+}): Promise<PagedResponse<Project>> {
+  const { page, pageSize } = params;
+
+  // Simulated network latency
+  await sleep(200 + Math.random() * 250);
+
+  const all = projects as Project[];
+  const total = all.length;
+  const totalPages = Math.ceil(total / pageSize);
+
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const start = (safePage - 1) * pageSize;
+  const end = start + pageSize;
+
+  return {
+    page: safePage,
+    pageSize,
+    total,
+    totalPages,
+    items: all.slice(start, end),
+  };
+}

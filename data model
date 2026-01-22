@@ -1,0 +1,10 @@
+export type ProjectStatus = "Planned" | "In Progress" | "Completed" | "On Hold";
+
+export type Project = {
+  id: string;
+  projectName: string;
+  latitude: number;
+  longitude: number;
+  status: ProjectStatus;
+  lastUpdated: string; // ISO date string
+};

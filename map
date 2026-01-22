@@ -1,0 +1,70 @@
+import { Box, Paper } from "@mui/material";
+import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap } from "react-leaflet";
+import type { Project } from "../../types/project";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { useEffect, useMemo } from "react";
+
+type Props = {
+  rows: Project[];
+  selectedId: string | null;
+  onSelectById: (id: string) => void;
+};
+
+export function ProjectMap(props: Props) {
+  const selected = useMemo(
+    () => props.rows.find((r) => r.id === props.selectedId) ?? null,
+    [props.rows, props.selectedId]
+  );
+
+  return (
+    <Paper variant="outlined" sx={{ height: "100%", overflow: "hidden" }}>
+      <Box sx={{ height: 600 }}>
+        <MapContainer center={[20, 0]} zoom={2} style={{ height: "100%", width: "100%" }}>
+          <TileLayer
+            attribution='&copy; OpenStreetMap'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+
+          <MapPanToSelected selected={selected} />
+
+          {props.rows.map((p) => {
+            const isSelected = p.id === props.selectedId;
+
+            // Use CircleMarker for “highlight” (fast + visible)
+            return (
+              <CircleMarker
+                key={p.id}
+                center={[p.latitude, p.longitude]}
+                radius={isSelected ? 10 : 6}
+                pathOptions={{}}
+                eventHandlers={{
+                  click: () => props.onSelectById(p.id),
+                }}
+              >
+                <Popup>
+                  <strong>{p.projectName}</strong>
+                  <div>Status: {p.status}</div>
+                  <div>
+                    {p.latitude.toFixed(4)}, {p.longitude.toFixed(4)}
+                  </div>
+                </Popup>
+              </CircleMarker>
+            );
+          })}
+        </MapContainer>
+      </Box>
+    </Paper>
+  );
+}
+
+function MapPanToSelected({ selected }: { selected: Project | null }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!selected) return;
+    map.flyTo([selected.latitude, selected.longitude], Math.max(map.getZoom(), 5), { duration: 0.6 });
+  }, [selected, map]);
+
+  return null;
+}

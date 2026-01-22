@@ -1,0 +1,19 @@
+import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
+import { useEffect } from "react";
+import { Dashboard } from "./components/Dashboard/Dashboard";
+import { fixLeafletIcons } from "./utils/leafletFix";
+
+const theme = createTheme({});
+
+export default function App() {
+  useEffect(() => {
+    fixLeafletIcons();
+  }, []);
+
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Dashboard />
+    </ThemeProvider>
+  );
+}

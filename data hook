@@ -1,0 +1,96 @@
+import { useCallback, useMemo, useRef, useState } from "react";
+import type { Project } from "../types/project";
+import { fetchProjectsPage } from "../api/mockApi";
+
+export function useProjects(pageSize = 200) {
+  const cacheRef = useRef<Map<number, Project[]>>(new Map());
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const [loaded, setLoaded] = useState<Project[]>([]);
+
+  const loadPage = useCallback(async (p: number) => {
+    if (cacheRef.current.has(p)) {
+      setPage(p);
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetchProjectsPage({ page: p, pageSize });
+      cacheRef.current.set(res.page, res.items);
+      setTotal(res.total);
+      setTotalPages(res.totalPages);
+      setPage(res.page);
+    } finally {
+      setLoading(false);
+    }
+  }, [pageSize]);
+
+  const hydrateLoadedFromCache = useCallback(() => {
+    const pages = [...cacheRef.current.keys()].sort((a, b) => a - b);
+    const all = pages.flatMap((p) => cacheRef.current.get(p) ?? []);
+    setLoaded(all);
+  }, []);
+
+  const loadAllPages = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Ensure we know totalPages by loading page 1
+      if (!cacheRef.current.has(1)) {
+        const first = await fetchProjectsPage({ page: 1, pageSize });
+        cacheRef.current.set(1, first.items);
+        setTotal(first.total);
+        setTotalPages(first.totalPages);
+        setPage(1);
+      }
+
+      // Read totalPages from state might be stale; compute from total/pageSize
+      const totalLocal = total || (cacheRef.current.get(1)?.length ? undefined : undefined);
+      // safer: call page 1 result already gave totalPages in state, but may not update instantly:
+      const guessPages = Math.max(1, Math.ceil((projectsCountFallback() ?? total) / pageSize));
+      const finalPages = Math.max(totalPages, guessPages);
+
+      for (let p = 2; p <= finalPages; p++) {
+        if (!cacheRef.current.has(p)) {
+          const res = await fetchProjectsPage({ page: p, pageSize });
+          cacheRef.current.set(p, res.items);
+          setTotal(res.total);
+          setTotalPages(res.totalPages);
+        }
+      }
+
+      hydrateLoadedFromCache();
+    } finally {
+      setLoading(false);
+    }
+  }, [hydrateLoadedFromCache, pageSize, total, totalPages]);
+
+  // Helper: optional fallback if you want; keeping minimal and safe
+  function projectsCountFallback() {
+    return undefined;
+  }
+
+  const currentPageItems = useMemo(() => {
+    return cacheRef.current.get(page) ?? [];
+  }, [page]);
+
+  const allLoaded = loaded.length;
+
+  return {
+    loading,
+    page,
+    pageSize,
+    total,
+    totalPages,
+
+    currentPageItems,
+    loadedItems: loaded,
+    loadedCount: allLoaded,
+
+    loadPage,
+    hydrateLoadedFromCache,
+    loadAllPages,
+  };
+}

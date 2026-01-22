@@ -1,0 +1,56 @@
+import { Box, Button, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
+
+type Props = {
+  query: string;
+  onQueryChange: (v: string) => void;
+  status: string;
+  onStatusChange: (v: string) => void;
+  statusOptions: string[];
+
+  loading: boolean;
+  loadedCount: number;
+  total: number;
+
+  onLoadAll: () => void;
+};
+
+export function ProjectToolbar(props: Props) {
+  return (
+    <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
+      <Typography variant="h6" sx={{ mr: 1 }}>Geo Data Dashboard</Typography>
+
+      <TextField
+        size="small"
+        label="Search"
+        value={props.query}
+        onChange={(e) => props.onQueryChange(e.target.value)}
+      />
+
+      <FormControl size="small" sx={{ minWidth: 160 }}>
+        <InputLabel>Status</InputLabel>
+        <Select
+          label="Status"
+          value={props.status}
+          onChange={(e) => props.onStatusChange(String(e.target.value))}
+        >
+          {props.statusOptions.map((s) => (
+            <MenuItem key={s} value={s}>{s}</MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+
+      <Button
+        variant="contained"
+        onClick={props.onLoadAll}
+        disabled={props.loading}
+      >
+        Load all (5k+)
+      </Button>
+
+      <Typography variant="body2" color="text.secondary">
+        Loaded: {props.loadedCount} / {props.total || "?"}
+        {props.loading ? " (loading…)" : ""}
+      </Typography>
+    </Box>
+  );
+}

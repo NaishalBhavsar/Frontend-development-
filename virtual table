@@ -1,0 +1,62 @@
+import { Box, IconButton, Typography } from "@mui/material";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import type { SortDir, SortKey } from "../../utils/filterSort";
+
+const cols: { key: SortKey; label: string; width: number }[] = [
+  { key: "projectName", label: "Project Name", width: 260 },
+  { key: "latitude", label: "Latitude", width: 120 },
+  { key: "longitude", label: "Longitude", width: 120 },
+  { key: "status", label: "Status", width: 140 },
+  { key: "lastUpdated", label: "Last Updated", width: 180 },
+];
+
+export function TableHeader(props: {
+  sortKey: SortKey;
+  sortDir: SortDir;
+  onSortChange: (k: SortKey) => void;
+}) {
+  return (
+    <Box
+      display="flex"
+      sx={{
+        position: "sticky",
+        top: 0,
+        zIndex: 2,
+        bgcolor: "background.paper",
+        borderBottom: "1px solid",
+        borderColor: "divider",
+      }}
+    >
+      {cols.map((c) => {
+        const active = props.sortKey === c.key;
+        return (
+          <Box
+            key={c.key}
+            width={c.width}
+            px={1}
+            py={1}
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+            sx={{ cursor: "pointer" }}
+            onClick={() => props.onSortChange(c.key)}
+          >
+            <Typography variant="subtitle2">{c.label}</Typography>
+            {active && (
+              <IconButton size="small">
+                {props.sortDir === "asc" ? (
+                  <ArrowUpwardIcon fontSize="inherit" />
+                ) : (
+                  <ArrowDownwardIcon fontSize="inherit" />
+                )}
+              </IconButton>
+            )}
+          </Box>
+        );
+      })}
+    </Box>
+  );
+}
+
+export const tableColumns = cols;

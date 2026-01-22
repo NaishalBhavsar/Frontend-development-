@@ -1,0 +1,28 @@
+import { writeFileSync } from "node:fs";
+
+const statuses = ["Planned", "In Progress", "Completed", "On Hold"];
+
+function rand(min, max) {
+  return Math.random() * (max - min) + min;
+}
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+function isoRecentDate(daysBack = 180) {
+  const now = Date.now();
+  const past = now - Math.floor(Math.random() * daysBack) * 24 * 60 * 60 * 1000;
+  return new Date(past).toISOString();
+}
+
+const count = 5000;
+const items = Array.from({ length: count }).map((_, i) => ({
+  id: String(i + 1),
+  projectName: `Project ${i + 1}`,
+  latitude: Number(rand(-60, 60).toFixed(6)),
+  longitude: Number(rand(-170, 170).toFixed(6)),
+  status: pick(statuses),
+  lastUpdated: isoRecentDate(),
+}));
+
+writeFileSync("./src/data/projects.json", JSON.stringify(items, null, 2));
+console.log("Generated:", items.length);
